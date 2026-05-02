@@ -12,6 +12,8 @@ import '../views/onboarding/onboarding_view.dart';
 import '../views/pets/pet_detail_view.dart';
 import '../views/pets/pet_form_view.dart';
 import '../views/profile/profile_view.dart';
+import '../views/reminders/reminders_view.dart';
+import '../views/resources/resources_view.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final state = ref.watch(appStateControllerProvider);
@@ -36,6 +38,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/auth', builder: (_, __) => const AuthView()),
       GoRoute(path: '/home', builder: (_, __) => const HomeView()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileView()),
+      GoRoute(path: '/reminders', builder: (_, __) => const RemindersView()),
+      GoRoute(path: '/resources', builder: (_, __) => const ResourcesView()),
       GoRoute(path: '/food', builder: (_, __) => const FoodSafetyView()),
       GoRoute(path: '/assistant', builder: (_, __) => const AiAssistantView()),
       GoRoute(path: '/pets/new', builder: (_, __) => const PetFormView()),

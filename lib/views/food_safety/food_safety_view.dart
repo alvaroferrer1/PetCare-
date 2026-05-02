@@ -20,6 +20,7 @@ class _FoodSafetyViewState extends ConsumerState<FoodSafetyView> {
   String _species = 'dog';
   FoodSafetyLevel? _filterLevel;
   FoodSafetyItemModel? _highlight;
+  bool _searchingExternal = false;
 
   @override
   void dispose() {
@@ -128,7 +129,28 @@ class _FoodSafetyViewState extends ConsumerState<FoodSafetyView> {
           const SizedBox(height: 18),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 260),
-            child: _highlight == null
+            child: _searchingExternal
+                ? const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(18),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Buscando en base local y fuente externa gratuita...',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : _highlight == null
                 ? const SizedBox.shrink()
                 : _FoodResultCard(item: _highlight!),
           ),
@@ -213,11 +235,15 @@ class _FoodSafetyViewState extends ConsumerState<FoodSafetyView> {
     });
   }
 
-  void _search() {
+  Future<void> _search() async {
+    setState(() => _searchingExternal = true);
+    final result = await ref
+        .read(appStateControllerProvider.notifier)
+        .searchFoodWithExternalFallback(_query.text, _species);
+    if (!mounted) return;
     setState(() {
-      _highlight = ref
-          .read(appStateControllerProvider.notifier)
-          .searchFood(_query.text, _species);
+      _highlight = result;
+      _searchingExternal = false;
     });
   }
 }

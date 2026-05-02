@@ -77,17 +77,37 @@ class HomeView extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _QuickAction(
-                    icon: Icons.restaurant_menu,
-                    label: 'Food Safety',
-                    onTap: () => context.go('/food'),
+                    icon: Icons.event_available,
+                    label: 'Recordatorios',
+                    onTap: () => context.go('/reminders'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _QuickAction(
+                    icon: Icons.restaurant_menu,
+                    label: 'Food Safety',
+                    onTap: () => context.go('/food'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _QuickAction(
                     icon: Icons.auto_awesome,
                     label: 'Asistente IA',
                     onTap: () => context.go('/assistant'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.verified_user_outlined,
+                    label: 'Guia segura',
+                    onTap: () => context.go('/resources'),
                   ),
                 ),
               ],

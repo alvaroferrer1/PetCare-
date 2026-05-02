@@ -9,6 +9,7 @@ import '../models/health_note_model.dart';
 import '../models/pet_model.dart';
 import '../models/profile_model.dart';
 import '../services/openai_service.dart';
+import '../services/dog_food_api_service.dart';
 
 class AppState {
   const AppState({
@@ -115,14 +116,19 @@ class AppStateController extends StateNotifier<AppState> {
     await _auth(email, password, register: false);
   }
 
-  Future<void> register(String email, String password) async {
-    await _auth(email, password, register: true);
+  Future<void> register(
+    String email,
+    String password, {
+    String fullName = '',
+  }) async {
+    await _auth(email, password, register: true, fullName: fullName);
   }
 
   Future<void> _auth(
     String email,
     String password, {
     required bool register,
+    String fullName = '',
   }) async {
     state = state.copyWith(loading: true, clearError: true);
     try {
@@ -137,7 +143,11 @@ class AppStateController extends StateNotifier<AppState> {
       }
 
       final response = register
-          ? await client.auth.signUp(email: email, password: password)
+          ? await client.auth.signUp(
+              email: email,
+              password: password,
+              data: {'full_name': fullName},
+            )
           : await client.auth.signInWithPassword(
               email: email,
               password: password,
@@ -149,6 +159,7 @@ class AppStateController extends StateNotifier<AppState> {
       await client.from('profiles').upsert({
         'id': user.id,
         'email': user.email,
+        if (fullName.isNotEmpty) 'full_name': fullName,
         'updated_at': DateTime.now().toIso8601String(),
       });
       state = state.copyWith(
@@ -335,6 +346,18 @@ class AppStateController extends StateNotifier<AppState> {
               normalized.contains(item.normalizedName)),
       orElse: () => FoodSafetyItemModel.unknown(query, species),
     );
+  }
+
+  Future<FoodSafetyItemModel> searchFoodWithExternalFallback(
+    String query,
+    String species,
+  ) async {
+    final local = searchFood(query, species);
+    if (local.safetyLevel != FoodSafetyLevel.unknown || species != 'dog') {
+      return local;
+    }
+    final external = await DogFoodApiService().search(query);
+    return external ?? local;
   }
 
   Future<AiSummaryModel> generateSummary(String petId) async {

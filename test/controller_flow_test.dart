@@ -112,6 +112,21 @@ void main() {
     expect(safe.safetyLevel, FoodSafetyLevel.safe);
   });
 
+  test(
+    'food safety para gatos desconocido no llama fuente externa de perros',
+    () async {
+      final controller = AppStateController(demoConfig);
+
+      final result = await controller.searchFoodWithExternalFallback(
+        'comida inventada',
+        'cat',
+      );
+
+      expect(result.safetyLevel, FoodSafetyLevel.unknown);
+      expect(result.source, 'Base local sin coincidencia');
+    },
+  );
+
   test('guardar perfil actualiza datos del dueno en modo local', () async {
     final controller = AppStateController(demoConfig);
     await controller.signIn('demo@petcare.app', 'demopass');
