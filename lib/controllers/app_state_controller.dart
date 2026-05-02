@@ -8,8 +8,10 @@ import '../models/food_safety_item_model.dart';
 import '../models/health_note_model.dart';
 import '../models/pet_model.dart';
 import '../models/profile_model.dart';
-import '../services/openai_service.dart';
+import '../models/product_check_model.dart';
 import '../services/dog_food_api_service.dart';
+import '../services/open_food_facts_service.dart';
+import '../services/openai_service.dart';
 
 class AppState {
   const AppState({
@@ -358,6 +360,31 @@ class AppStateController extends StateNotifier<AppState> {
     }
     final external = await DogFoodApiService().search(query);
     return external ?? local;
+  }
+
+  Future<ProductCheckModel> checkProductIngredients(
+    String query,
+    String species,
+  ) async {
+    final product = await OpenFoodFactsService().searchByText(query);
+    final ingredients = normalizeFoodName(product?.ingredientsText ?? query);
+    final risks = state.foodItems.where((item) {
+      if (item.species != species) return false;
+      if (item.safetyLevel == FoodSafetyLevel.safe) return false;
+      return ingredients.contains(item.normalizedName);
+    }).toList();
+
+    return ProductCheckModel(
+      query: query,
+      productName: product?.name ?? query,
+      ingredients: product?.ingredientsText.isNotEmpty == true
+          ? product!.ingredientsText
+          : 'No se encontraron ingredientes en Open Food Facts. Se muestra resultado orientativo.',
+      matchedRisks: risks,
+      source: product == null
+          ? 'Open Food Facts sin coincidencia'
+          : 'Open Food Facts - https://world.openfoodfacts.org',
+    );
   }
 
   Future<AiSummaryModel> generateSummary(String petId) async {

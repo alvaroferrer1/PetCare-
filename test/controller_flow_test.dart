@@ -154,6 +154,21 @@ void main() {
     expect(summary.summary, contains('Max'));
     expect(summary.safetyNotice, isNotEmpty);
   });
+
+  test('analisis de producto detecta ingredientes de riesgo locales', () async {
+    final controller = AppStateController(demoConfig);
+
+    final result = await controller.checkProductIngredients(
+      'chocolate, arroz',
+      'dog',
+    );
+
+    expect(
+      result.matchedRisks.any((item) => item.foodName == 'chocolate'),
+      isTrue,
+    );
+    expect(result.highestLevel, FoodSafetyLevel.toxic);
+  });
 }
 
 CareEventModel _event(String petId, String title, DateTime date) {

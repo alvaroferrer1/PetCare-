@@ -36,6 +36,7 @@ migrate_working_dir/
 .env.*
 !.env.example
 flutter_web_server*.log
+supabase/.temp/
 
 # Symbolication related
 app.*.symbols

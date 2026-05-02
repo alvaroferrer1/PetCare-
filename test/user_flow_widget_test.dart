@@ -79,6 +79,36 @@ void main() {
     expect(find.text('Centro de confianza'), findsOneWidget);
   });
 
+  testWidgets('home navega a analisis de producto', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(
+            const AppConfig(
+              supabaseUrl: '',
+              supabaseAnonKey: '',
+              openAiApiKey: '',
+              catApiKey: '',
+            ),
+          ),
+        ],
+        child: const PetCareApp(),
+      ),
+    );
+
+    await tester.tap(find.text('Continuar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Entrar'));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Analizar producto'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Producto e ingredientes'), findsOneWidget);
+  });
+
   testWidgets('registro valida email, nombre y contrasena', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

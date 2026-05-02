@@ -112,6 +112,20 @@ class HomeView extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _QuickAction(
+                    icon: Icons.qr_code_scanner,
+                    label: 'Analizar producto',
+                    onTap: () => context.go('/product-check'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: SizedBox.shrink()),
+              ],
+            ),
             const SizedBox(height: 26),
             AppSection(
               title: 'Tus mascotas',
