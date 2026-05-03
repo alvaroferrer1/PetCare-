@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/empty_state.dart';
 
 class CalendarView extends ConsumerStatefulWidget {
@@ -39,7 +39,7 @@ class _CalendarViewState extends ConsumerState<CalendarView> {
               ),
               Expanded(
                 child: Text(
-                  DateFormat.yMMMM('es').format(_month),
+                  formatMonthYear(_month),
                   textAlign: TextAlign.center,
                   style: Theme.of(
                     context,

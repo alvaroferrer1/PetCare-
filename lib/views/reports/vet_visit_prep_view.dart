@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
 import '../../core/constants/app_copy.dart';
+import '../../core/utils/date_text.dart';
 
 class VetVisitPrepView extends ConsumerStatefulWidget {
   const VetVisitPrepView({super.key});
@@ -65,7 +65,7 @@ class _VetVisitPrepViewState extends ConsumerState<VetVisitPrepView> {
                 : [
                     for (final event in pending)
                       Text(
-                        '· ${event.title} (${DateFormat.yMMMd('es').format(event.eventDate)})',
+                        '· ${event.title} (${formatReadableDate(event.eventDate)})',
                       ),
                   ],
           ),
