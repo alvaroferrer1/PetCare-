@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/animated_list_item.dart';
 import '../../core/widgets/empty_state.dart';
 
@@ -49,7 +49,7 @@ class ActivityView extends ConsumerWidget {
                     ),
                     title: Text(entry.$2.title),
                     subtitle: Text(entry.$2.subtitle),
-                    trailing: Text(DateFormat.MMMd('es').format(entry.$2.date)),
+                    trailing: Text(formatShortDate(entry.$2.date)),
                   ),
                 ),
               ),

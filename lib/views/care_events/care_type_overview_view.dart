@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
 import '../../core/navigation/safe_navigation.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/animated_list_item.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../models/care_event_model.dart';
@@ -82,7 +82,7 @@ class CareTypeOverviewView extends ConsumerWidget {
                     leading: CircleAvatar(child: Icon(_iconFor(type))),
                     title: Text(entry.$2.title),
                     subtitle: Text(
-                      '${petsById[entry.$2.petId]?.name ?? 'Mascota'} · ${DateFormat.yMMMd('es').format(entry.$2.eventDate)}',
+                      '${petsById[entry.$2.petId]?.name ?? 'Mascota'} · ${formatReadableDate(entry.$2.eventDate)}',
                     ),
                     trailing: entry.$2.status == CareEventStatus.pending
                         ? IconButton(

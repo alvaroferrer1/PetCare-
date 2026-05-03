@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/empty_state.dart';
 
 class TimelineView extends ConsumerWidget {
@@ -78,7 +78,7 @@ class TimelineView extends ConsumerWidget {
                   leading: CircleAvatar(child: Icon(item.icon)),
                   title: Text(item.title),
                   subtitle: Text(item.subtitle),
-                  trailing: Text(DateFormat.MMMd('es').format(item.date)),
+                  trailing: Text(formatShortDate(item.date)),
                 ),
               ),
         ],

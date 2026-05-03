@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
 import '../../core/navigation/safe_navigation.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/animated_list_item.dart';
 import '../../core/widgets/app_section.dart';
 import '../../core/widgets/metric_card.dart';
@@ -171,7 +171,7 @@ class _PetDetailViewState extends ConsumerState<PetDetailView> {
                             child: ListTile(
                               title: Text(entry.$2.title),
                               subtitle: Text(
-                                '${entry.$2.type.label} · ${DateFormat.yMMMd('es').format(entry.$2.eventDate)}',
+                                '${entry.$2.type.label} · ${formatReadableDate(entry.$2.eventDate)}',
                               ),
                               trailing: Chip(
                                 label: Text(entry.$2.status.label),

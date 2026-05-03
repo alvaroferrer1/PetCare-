@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
 import '../../core/constants/app_copy.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/metric_card.dart';
 import '../../models/care_event_model.dart';
@@ -99,7 +99,7 @@ class WellbeingView extends ConsumerWidget {
                                 : note.symptoms,
                           ),
                           subtitle: Text(
-                            '${DateFormat.yMMMd('es').format(note.noteDate)} · Energia ${note.energyLevel}/5 · ${note.mood}',
+                            '${formatReadableDate(note.noteDate)} · Energia ${note.energyLevel}/5 · ${note.mood}',
                           ),
                         ),
                     ],
@@ -125,7 +125,7 @@ class WellbeingView extends ConsumerWidget {
                           leading: const Icon(Icons.schedule),
                           title: Text(event.title),
                           subtitle: Text(
-                            '${event.type.label} · ${DateFormat.yMMMd('es').format(event.eventDate)}',
+                            '${event.type.label} · ${formatReadableDate(event.eventDate)}',
                           ),
                         ),
                     ],

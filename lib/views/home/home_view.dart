@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../controllers/app_state_controller.dart';
 import '../../core/navigation/safe_navigation.dart';
+import '../../core/utils/date_text.dart';
 import '../../core/widgets/animated_list_item.dart';
 import '../../core/widgets/app_section.dart';
 import '../../core/widgets/empty_state.dart';
@@ -488,7 +488,7 @@ class _ReminderTile extends ConsumerWidget {
     return Card(
       child: ListTile(
         title: Text(event.title),
-        subtitle: Text(DateFormat.yMMMd('es').format(event.eventDate)),
+        subtitle: Text(formatReadableDate(event.eventDate)),
         trailing: IconButton(
           icon: const Icon(Icons.check_circle_outline),
           onPressed: () => ref
