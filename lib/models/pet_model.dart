@@ -5,8 +5,10 @@ enum PetSpecies {
   const PetSpecies(this.label);
   final String label;
 
-  static PetSpecies fromDb(String value) =>
-      PetSpecies.values.firstWhere((item) => item.name == value);
+  static PetSpecies fromDb(String value) => PetSpecies.values.firstWhere(
+    (item) => item.name == value,
+    orElse: () => PetSpecies.dog,
+  );
 }
 
 class PetModel {
@@ -20,6 +22,7 @@ class PetModel {
     required this.weight,
     required this.photoUrl,
     required this.notes,
+    required this.allergies,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -33,6 +36,7 @@ class PetModel {
   final double? weight;
   final String? photoUrl;
   final String notes;
+  final String allergies;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -48,6 +52,7 @@ class PetModel {
       weight: null,
       photoUrl: null,
       notes: '',
+      allergies: '',
       createdAt: now,
       updatedAt: now,
     );
@@ -66,6 +71,7 @@ class PetModel {
       weight: (map['weight'] as num?)?.toDouble(),
       photoUrl: map['photo_url'] as String?,
       notes: (map['notes'] ?? '') as String,
+      allergies: (map['allergies'] ?? '') as String,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -82,6 +88,7 @@ class PetModel {
       'weight': weight,
       'photo_url': photoUrl,
       'notes': notes,
+      'allergies': allergies,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -97,6 +104,7 @@ class PetModel {
     double? weight,
     String? photoUrl,
     String? notes,
+    String? allergies,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -110,6 +118,7 @@ class PetModel {
       weight: weight ?? this.weight,
       photoUrl: photoUrl ?? this.photoUrl,
       notes: notes ?? this.notes,
+      allergies: allergies ?? this.allergies,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

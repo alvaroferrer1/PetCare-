@@ -48,6 +48,7 @@ void main() {
         weight: 4.2,
         photoUrl: null,
         notes: 'Tranquila',
+        allergies: '',
         createdAt: now,
         updatedAt: now,
       );

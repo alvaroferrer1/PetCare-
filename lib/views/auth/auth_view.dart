@@ -137,6 +137,19 @@ class _AuthViewState extends ConsumerState<AuthView> {
                   ),
                 ),
               ],
+              if (state.message != null) ...[
+                const SizedBox(height: 14),
+                Card(
+                  color: Colors.green.shade50,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Text(
+                      state.message!,
+                      style: TextStyle(color: Colors.green.shade900),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 22),
               FilledButton(
                 onPressed: state.loading ? null : _submit,

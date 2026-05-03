@@ -19,7 +19,10 @@ enum CareEventType {
 
   static CareEventType fromDb(String value) {
     if (value == 'vet_visit') return CareEventType.vetVisit;
-    return CareEventType.values.firstWhere((item) => item.name == value);
+    return CareEventType.values.firstWhere(
+      (item) => item.name == value,
+      orElse: () => CareEventType.other,
+    );
   }
 }
 
@@ -32,7 +35,10 @@ enum CareEventStatus {
   final String label;
 
   static CareEventStatus fromDb(String value) =>
-      CareEventStatus.values.firstWhere((item) => item.name == value);
+      CareEventStatus.values.firstWhere(
+        (item) => item.name == value,
+        orElse: () => CareEventStatus.pending,
+      );
 }
 
 class CareEventModel {

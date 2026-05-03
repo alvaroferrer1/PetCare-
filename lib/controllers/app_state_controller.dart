@@ -1,14 +1,19 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/config/app_config.dart';
 import '../models/ai_summary_model.dart';
+import '../models/activity_item_model.dart';
 import '../models/care_event_model.dart';
 import '../models/food_safety_item_model.dart';
 import '../models/health_note_model.dart';
 import '../models/pet_model.dart';
+import '../models/pet_document_model.dart';
 import '../models/profile_model.dart';
 import '../models/product_check_model.dart';
+import '../models/vet_contact_model.dart';
+import '../models/weight_log_model.dart';
 import '../services/dog_food_api_service.dart';
 import '../services/open_food_facts_service.dart';
 import '../services/openai_service.dart';
@@ -22,8 +27,13 @@ class AppState {
     required this.events,
     required this.notes,
     required this.foodItems,
+    required this.vetContacts,
+    required this.documents,
+    required this.weightLogs,
+    required this.productChecks,
     required this.summaries,
     this.error,
+    this.message,
   });
 
   factory AppState.initial() {
@@ -35,6 +45,10 @@ class AppState {
       events: const [],
       notes: const [],
       foodItems: FoodSafetySeed.items,
+      vetContacts: const [],
+      documents: const [],
+      weightLogs: const [],
+      productChecks: const [],
       summaries: const {},
     );
   }
@@ -46,8 +60,13 @@ class AppState {
   final List<CareEventModel> events;
   final List<HealthNoteModel> notes;
   final List<FoodSafetyItemModel> foodItems;
+  final List<VetContactModel> vetContacts;
+  final List<PetDocumentModel> documents;
+  final List<WeightLogModel> weightLogs;
+  final List<ProductCheckModel> productChecks;
   final Map<String, AiSummaryModel> summaries;
   final String? error;
+  final String? message;
 
   bool get isAuthenticated => profile != null;
 
@@ -68,9 +87,15 @@ class AppState {
     List<CareEventModel>? events,
     List<HealthNoteModel>? notes,
     List<FoodSafetyItemModel>? foodItems,
+    List<VetContactModel>? vetContacts,
+    List<PetDocumentModel>? documents,
+    List<WeightLogModel>? weightLogs,
     Map<String, AiSummaryModel>? summaries,
+    List<ProductCheckModel>? productChecks,
     String? error,
     bool clearError = false,
+    String? message,
+    bool clearMessage = false,
   }) {
     return AppState(
       loading: loading ?? this.loading,
@@ -80,8 +105,13 @@ class AppState {
       events: events ?? this.events,
       notes: notes ?? this.notes,
       foodItems: foodItems ?? this.foodItems,
+      vetContacts: vetContacts ?? this.vetContacts,
+      documents: documents ?? this.documents,
+      weightLogs: weightLogs ?? this.weightLogs,
+      productChecks: productChecks ?? this.productChecks,
       summaries: summaries ?? this.summaries,
       error: clearError ? null : error ?? this.error,
+      message: clearMessage ? null : message ?? this.message,
     );
   }
 }
@@ -132,7 +162,7 @@ class AppStateController extends StateNotifier<AppState> {
     required bool register,
     String fullName = '',
   }) async {
-    state = state.copyWith(loading: true, clearError: true);
+    state = state.copyWith(loading: true, clearError: true, clearMessage: true);
     try {
       final client = _client;
       if (client == null) {
@@ -157,6 +187,14 @@ class AppStateController extends StateNotifier<AppState> {
       final user = response.user;
       if (user == null) {
         throw const AuthException('No se pudo autenticar el usuario.');
+      }
+      if (register && response.session == null) {
+        state = state.copyWith(
+          loading: false,
+          message:
+              'Cuenta creada. Revisa tu email para confirmar el registro antes de iniciar sesion.',
+        );
+        return;
       }
       await client.from('profiles').upsert({
         'id': user.id,
@@ -210,6 +248,26 @@ class AppStateController extends StateNotifier<AppState> {
           .select()
           .eq('id', profile.id)
           .limit(1);
+      final vetContacts = await client
+          .from('vet_contacts')
+          .select()
+          .eq('user_id', profile.id)
+          .order('is_emergency', ascending: false);
+      final documents = await client
+          .from('pet_documents')
+          .select()
+          .eq('user_id', profile.id)
+          .order('created_at', ascending: false);
+      final weightLogs = await client
+          .from('weight_logs')
+          .select()
+          .eq('user_id', profile.id)
+          .order('logged_at');
+      final productChecks = await client
+          .from('product_checks')
+          .select()
+          .eq('user_id', profile.id)
+          .order('created_at', ascending: false);
       state = state.copyWith(
         loading: false,
         profile: profiles.isEmpty
@@ -219,6 +277,10 @@ class AppStateController extends StateNotifier<AppState> {
         events: events.map(CareEventModel.fromMap).toList(),
         notes: notes.map(HealthNoteModel.fromMap).toList(),
         foodItems: food.map(FoodSafetyItemModel.fromMap).toList(),
+        vetContacts: vetContacts.map(VetContactModel.fromMap).toList(),
+        documents: documents.map(PetDocumentModel.fromMap).toList(),
+        weightLogs: weightLogs.map(WeightLogModel.fromMap).toList(),
+        productChecks: productChecks.map(ProductCheckModel.fromMap).toList(),
       );
     } catch (error) {
       state = state.copyWith(loading: false, error: _friendlyError(error));
@@ -334,6 +396,74 @@ class AppStateController extends StateNotifier<AppState> {
     state = state.copyWith(notes: [item, ...state.notes]);
   }
 
+  Future<void> saveVetContact(VetContactModel contact) async {
+    final item = contact.id.isEmpty
+        ? VetContactModel(
+            id: _localId('vet'),
+            userId: contact.userId,
+            name: contact.name,
+            clinic: contact.clinic,
+            phone: contact.phone,
+            notes: contact.notes,
+            isEmergency: contact.isEmergency,
+          )
+        : contact;
+    final client = _client;
+    if (client != null && state.profile != null) {
+      final data = item.toMap();
+      if (contact.id.isEmpty || contact.id.startsWith('local-')) {
+        await client.from('vet_contacts').insert(data..remove('id'));
+      } else {
+        await client.from('vet_contacts').update(data).eq('id', contact.id);
+      }
+      await refreshRemoteData();
+      return;
+    }
+    state = state.copyWith(vetContacts: [...state.vetContacts, item]);
+  }
+
+  Future<void> addDocument(PetDocumentModel document) async {
+    final item = PetDocumentModel(
+      id: document.id.isEmpty ? _localId('doc') : document.id,
+      userId: document.userId,
+      petId: document.petId,
+      title: document.title,
+      documentType: document.documentType,
+      fileUrl: document.fileUrl,
+      notes: document.notes,
+      createdAt: document.createdAt,
+    );
+    final client = _client;
+    if (client != null &&
+        state.profile != null &&
+        !document.petId.startsWith('local-')) {
+      await client.from('pet_documents').insert(item.toMap()..remove('id'));
+      await refreshRemoteData();
+      return;
+    }
+    state = state.copyWith(documents: [item, ...state.documents]);
+  }
+
+  Future<void> addWeightLog(WeightLogModel log) async {
+    final item = WeightLogModel(
+      id: log.id.isEmpty ? _localId('weight') : log.id,
+      userId: log.userId,
+      petId: log.petId,
+      weight: log.weight,
+      loggedAt: log.loggedAt,
+      notes: log.notes,
+    );
+    final client = _client;
+    if (client != null &&
+        state.profile != null &&
+        !log.petId.startsWith('local-')) {
+      await client.from('weight_logs').insert(item.toMap()..remove('id'));
+      await refreshRemoteData();
+      return;
+    }
+    state = state.copyWith(weightLogs: [...state.weightLogs, item]);
+  }
+
   FoodSafetyItemModel searchFood(String query, String species) {
     final normalized = normalizeFoodName(query);
     if (normalized.isEmpty) return FoodSafetyItemModel.unknown(query, species);
@@ -364,9 +494,12 @@ class AppStateController extends StateNotifier<AppState> {
 
   Future<ProductCheckModel> checkProductIngredients(
     String query,
-    String species,
-  ) async {
-    final product = await OpenFoodFactsService().searchByText(query);
+    String species, {
+    bool byBarcode = false,
+  }) async {
+    final product = byBarcode
+        ? await OpenFoodFactsService().searchByBarcode(query)
+        : await OpenFoodFactsService().searchByText(query);
     final ingredients = normalizeFoodName(product?.ingredientsText ?? query);
     final risks = state.foodItems.where((item) {
       if (item.species != species) return false;
@@ -374,21 +507,55 @@ class AppStateController extends StateNotifier<AppState> {
       return ingredients.contains(item.normalizedName);
     }).toList();
 
-    return ProductCheckModel(
+    final result = ProductCheckModel(
       query: query,
+      species: species,
       productName: product?.name ?? query,
       ingredients: product?.ingredientsText.isNotEmpty == true
           ? product!.ingredientsText
           : 'No se encontraron ingredientes en Open Food Facts. Se muestra resultado orientativo.',
+      barcode: product?.code ?? '',
+      imageUrl: product?.imageUrl ?? '',
       matchedRisks: risks,
       source: product == null
-          ? 'Open Food Facts sin coincidencia'
-          : 'Open Food Facts - https://world.openfoodfacts.org',
+          ? 'Open Pet Food Facts sin coincidencia'
+          : 'Open Pet Food Facts - https://world.openpetfoodfacts.org',
+      createdAt: DateTime.now(),
     );
+    final client = _client;
+    final profile = state.profile;
+    if (client != null && profile != null) {
+      await client.from('product_checks').insert({
+        'user_id': profile.id,
+        'species': species,
+        'query': result.query,
+        'product_name': result.productName,
+        'ingredients': result.ingredients,
+        'barcode': result.barcode,
+        'image_url': result.imageUrl,
+        'matched_risks': result.matchedRisks
+            .map(
+              (item) => {
+                'food_name': item.foodName,
+                'safety_level': item.safetyLevel.name,
+                'description': item.description,
+                'source': item.source,
+              },
+            )
+            .toList(),
+        'source': result.source,
+      });
+    }
+    state = state.copyWith(productChecks: [result, ...state.productChecks]);
+    return result;
   }
 
   Future<AiSummaryModel> generateSummary(String petId) async {
-    final pet = state.pets.firstWhere((item) => item.id == petId);
+    final matches = state.pets.where((item) => item.id == petId);
+    if (matches.isEmpty) {
+      throw StateError('No se pudo cargar la mascota para generar la IA.');
+    }
+    final pet = matches.first;
     final payload = {
       'pet': pet.toMap(),
       'recent_events': state.events
@@ -454,11 +621,81 @@ class AppStateController extends StateNotifier<AppState> {
     if (message.contains('Invalid login')) {
       return 'Email o contrasena incorrectos.';
     }
+    if (message.contains('Email not confirmed')) {
+      return 'Email pendiente de confirmar. Revisa tu correo antes de iniciar sesion.';
+    }
+    if (message.contains('email rate limit') ||
+        message.contains('over_email_send_rate_limit')) {
+      return 'Supabase ha limitado el envio de emails. Espera unos minutos o desactiva la confirmacion de email para la demo.';
+    }
     return 'Algo no ha ido bien. Revisa los datos e intentalo de nuevo.';
   }
 
   String _localId(String prefix) =>
       'local-$prefix-${DateTime.now().microsecondsSinceEpoch}';
+}
+
+List<ActivityItemModel> buildActivityFeed(AppState state) {
+  final petsById = {for (final pet in state.pets) pet.id: pet.name};
+  final items = <ActivityItemModel>[
+    for (final pet in state.pets)
+      ActivityItemModel(
+        title: 'Mascota creada',
+        subtitle: pet.name,
+        date: pet.createdAt,
+        icon: Icons.pets,
+        color: Colors.green,
+      ),
+    for (final event in state.events.where(
+      (event) =>
+          event.type == CareEventType.vaccine &&
+          event.status == CareEventStatus.completed,
+    ))
+      ActivityItemModel(
+        title: 'Vacuna completada',
+        subtitle: '${event.title} · ${petsById[event.petId] ?? 'Mascota'}',
+        date: event.updatedAt,
+        icon: Icons.vaccines_outlined,
+        color: Colors.blue,
+      ),
+    for (final note in state.notes)
+      ActivityItemModel(
+        title: 'Nota de salud añadida',
+        subtitle:
+            '${petsById[note.petId] ?? 'Mascota'} · ${note.symptoms.isEmpty ? 'Sin sintomas' : note.symptoms}',
+        date: note.createdAt,
+        icon: Icons.monitor_heart_outlined,
+        color: Colors.teal,
+      ),
+    for (final log in state.weightLogs)
+      ActivityItemModel(
+        title: 'Peso registrado',
+        subtitle:
+            '${petsById[log.petId] ?? 'Mascota'} · ${log.weight.toStringAsFixed(1)} kg',
+        date: log.loggedAt,
+        icon: Icons.monitor_weight_outlined,
+        color: Colors.orange,
+      ),
+    for (final summary in state.summaries.entries)
+      ActivityItemModel(
+        title: 'Informe generado',
+        subtitle: petsById[summary.key] ?? 'Mascota',
+        date: summary.value.createdAt,
+        icon: Icons.picture_as_pdf_outlined,
+        color: Colors.deepPurple,
+      ),
+    for (final check in state.productChecks)
+      ActivityItemModel(
+        title: 'Alimento consultado',
+        subtitle:
+            '${check.productName} · ${check.species == 'dog' ? 'Perro' : 'Gato'}',
+        date: check.createdAt,
+        icon: Icons.restaurant_menu,
+        color: check.hasRisks ? Colors.red : Colors.green,
+      ),
+  ];
+  items.sort((a, b) => b.date.compareTo(a.date));
+  return items;
 }
 
 final appStateControllerProvider =

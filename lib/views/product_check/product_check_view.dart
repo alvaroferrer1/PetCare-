@@ -18,6 +18,7 @@ class ProductCheckView extends ConsumerStatefulWidget {
 class _ProductCheckViewState extends ConsumerState<ProductCheckView> {
   final _query = TextEditingController();
   String _species = 'dog';
+  bool _byBarcode = false;
   bool _loading = false;
   ProductCheckModel? _result;
 
@@ -42,7 +43,7 @@ class _ProductCheckViewState extends ConsumerState<ProductCheckView> {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Busca un producto gratis en Open Food Facts y cruza sus ingredientes con la base de riesgos de la app.',
+            'Busca un producto gratis en Open Pet Food Facts y cruza sus ingredientes con la base de riesgos de la app.',
           ),
           const SizedBox(height: 16),
           SegmentedButton<String>(
@@ -63,12 +64,34 @@ class _ProductCheckViewState extends ConsumerState<ProductCheckView> {
                 setState(() => _species = value.first),
           ),
           const SizedBox(height: 14),
+          SegmentedButton<bool>(
+            selected: {_byBarcode},
+            segments: const [
+              ButtonSegment(
+                value: false,
+                label: Text('Nombre'),
+                icon: Icon(Icons.search),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text('Codigo'),
+                icon: Icon(Icons.qr_code),
+              ),
+            ],
+            onSelectionChanged: (value) =>
+                setState(() => _byBarcode = value.first),
+          ),
+          const SizedBox(height: 14),
           TextField(
             controller: _query,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              labelText: 'Nombre del producto',
-              hintText: 'Ej. chocolate cookies, peanut butter',
+              labelText: _byBarcode
+                  ? 'Codigo de barras'
+                  : 'Nombre del producto',
+              hintText: _byBarcode
+                  ? 'Ej. 20106836'
+                  : 'Ej. dog food chicken, cat food tuna',
               prefixIcon: const Icon(Icons.qr_code_scanner),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.search),
@@ -105,7 +128,7 @@ class _ProductCheckViewState extends ConsumerState<ProductCheckView> {
     setState(() => _loading = true);
     final result = await ref
         .read(appStateControllerProvider.notifier)
-        .checkProductIngredients(_query.text, _species);
+        .checkProductIngredients(_query.text, _species, byBarcode: _byBarcode);
     if (!mounted) return;
     setState(() {
       _result = result;
@@ -138,6 +161,22 @@ class _ProductResult extends StatelessWidget {
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
             ),
+            if (result.imageUrl.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.network(
+                  result.imageUrl,
+                  height: 160,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+            ],
+            if (result.barcode.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Codigo: ${result.barcode}'),
+            ],
             const SizedBox(height: 10),
             Text(result.ingredients),
             const Divider(height: 28),

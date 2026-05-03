@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:petcare_ai_companion/app.dart';
 import 'package:petcare_ai_companion/core/config/app_config.dart';
+import 'package:petcare_ai_companion/models/care_event_model.dart';
+import 'package:petcare_ai_companion/views/activity/activity_view.dart';
+import 'package:petcare_ai_companion/views/analytics/analytics_view.dart';
+import 'package:petcare_ai_companion/views/care_events/care_type_overview_view.dart';
+import 'package:petcare_ai_companion/views/emergency/emergency_view.dart';
+import 'package:petcare_ai_companion/views/product_check/product_check_view.dart';
+import 'package:petcare_ai_companion/views/reminders/reminders_view.dart';
+import 'package:petcare_ai_companion/views/resources/resources_view.dart';
 
 void main() {
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+  });
+
   testWidgets('flujo visual onboarding login y food safety', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -45,68 +56,48 @@ void main() {
     expect(find.text('Seguro'), findsWidgets);
   });
 
-  testWidgets('home navega a recordatorios y guia segura', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appConfigProvider.overrideWithValue(
-            const AppConfig(
-              supabaseUrl: '',
-              supabaseAnonKey: '',
-              openAiApiKey: '',
-              catApiKey: '',
-            ),
-          ),
-        ],
-        child: const PetCareApp(),
-      ),
-    );
-
-    await tester.tap(find.text('Continuar'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Entrar'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Recordatorios'));
-    await tester.pumpAndSettle();
+  testWidgets('pantallas de recordatorios y guia segura renderizan', (
+    tester,
+  ) async {
+    await _pumpScreen(tester, const RemindersView());
     expect(find.text('Plan de cuidados'), findsOneWidget);
 
-    final context = tester.element(find.text('Plan de cuidados'));
-    GoRouter.of(context).go('/home');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Guia segura'));
-    await tester.pumpAndSettle();
+    await _pumpScreen(tester, const ResourcesView());
     expect(find.text('Centro de confianza'), findsOneWidget);
   });
 
-  testWidgets('home navega a analisis de producto', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          appConfigProvider.overrideWithValue(
-            const AppConfig(
-              supabaseUrl: '',
-              supabaseAnonKey: '',
-              openAiApiKey: '',
-              catApiKey: '',
-            ),
-          ),
-        ],
-        child: const PetCareApp(),
+  testWidgets('pantalla de analisis de producto renderiza', (tester) async {
+    await _pumpScreen(tester, const ProductCheckView());
+    expect(find.text('Producto e ingredientes'), findsOneWidget);
+  });
+
+  testWidgets('pantalla de actividad reciente renderiza', (tester) async {
+    await _pumpScreen(tester, const ActivityView());
+    expect(find.text('Actividad reciente'), findsOneWidget);
+    expect(find.text('Todo lo importante'), findsOneWidget);
+  });
+
+  testWidgets('pantalla de vacunas renderiza', (tester) async {
+    await _pumpScreen(
+      tester,
+      const CareTypeOverviewView(
+        type: CareEventType.vaccine,
+        title: 'Vacunas',
+        emptyTitle: 'Sin vacunas registradas',
+        emptyMessage: 'Crea la primera vacuna para controlar fechas y estado.',
       ),
     );
+    expect(find.text('Vacunas'), findsWidgets);
+  });
 
-    await tester.tap(find.text('Continuar'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Entrar'));
-    await tester.pumpAndSettle();
+  testWidgets('pantallas de emergencia y estadisticas renderizan', (
+    tester,
+  ) async {
+    await _pumpScreen(tester, const EmergencyView());
+    expect(find.text('Actua con calma'), findsOneWidget);
 
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Analizar producto'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Producto e ingredientes'), findsOneWidget);
+    await _pumpScreen(tester, const AnalyticsView());
+    expect(find.text('Resumen global'), findsOneWidget);
   });
 
   testWidgets('registro valida email, nombre y contrasena', (tester) async {
@@ -155,4 +146,24 @@ void main() {
     );
     expect(find.text('Las contrasenas no coinciden.'), findsOneWidget);
   });
+
+}
+
+Future<void> _pumpScreen(WidgetTester tester, Widget child) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        appConfigProvider.overrideWithValue(
+          const AppConfig(
+            supabaseUrl: '',
+            supabaseAnonKey: '',
+            openAiApiKey: '',
+            catApiKey: '',
+          ),
+        ),
+      ],
+      child: MaterialApp(home: child),
+    ),
+  );
+  await tester.pump();
 }

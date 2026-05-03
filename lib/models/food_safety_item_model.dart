@@ -8,7 +8,10 @@ enum FoodSafetyLevel {
   final String label;
 
   static FoodSafetyLevel fromDb(String value) =>
-      FoodSafetyLevel.values.firstWhere((item) => item.name == value);
+      FoodSafetyLevel.values.firstWhere(
+        (item) => item.name == value,
+        orElse: () => FoodSafetyLevel.unknown,
+      );
 }
 
 class FoodSafetyItemModel {

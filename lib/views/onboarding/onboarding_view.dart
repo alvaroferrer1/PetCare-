@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../controllers/app_state_controller.dart';
 import '../../core/constants/app_copy.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/widgets/petcare_logo.dart';
 
 class OnboardingView extends ConsumerWidget {
   const OnboardingView({super.key});
@@ -30,15 +30,7 @@ class OnboardingView extends ConsumerWidget {
                     ),
                   );
                 },
-                child: Container(
-                  width: 92,
-                  height: 92,
-                  decoration: BoxDecoration(
-                    color: AppTheme.mint,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: const Icon(Icons.pets, size: 48, color: AppTheme.leaf),
-                ),
+                child: const PetCareLogo(),
               ),
               const SizedBox(height: 28),
               Text(

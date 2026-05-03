@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../controllers/app_state_controller.dart';
+import '../../core/navigation/safe_navigation.dart';
 import '../../models/health_note_model.dart';
 
 class HealthNoteFormView extends ConsumerStatefulWidget {
@@ -93,6 +92,7 @@ class _HealthNoteFormViewState extends ConsumerState<HealthNoteFormView> {
             updatedAt: now,
           ),
         );
-    if (mounted) context.go('/pets/${widget.petId}');
+    if (!mounted) return;
+    context.popOrRoot();
   }
 }

@@ -1,10 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:petcare_ai_companion/controllers/app_state_controller.dart';
 import 'package:petcare_ai_companion/core/config/app_config.dart';
+import 'package:petcare_ai_companion/models/ai_summary_model.dart';
 import 'package:petcare_ai_companion/models/care_event_model.dart';
 import 'package:petcare_ai_companion/models/food_safety_item_model.dart';
 import 'package:petcare_ai_companion/models/health_note_model.dart';
+import 'package:petcare_ai_companion/models/pet_document_model.dart';
 import 'package:petcare_ai_companion/models/pet_model.dart';
+import 'package:petcare_ai_companion/models/product_check_model.dart';
+import 'package:petcare_ai_companion/models/vet_contact_model.dart';
+import 'package:petcare_ai_companion/models/weight_log_model.dart';
 
 void main() {
   const demoConfig = AppConfig(
@@ -38,6 +43,21 @@ void main() {
 
     expect(controller.state.pets, hasLength(1));
     expect(controller.state.pets.first.name, 'Nala');
+  });
+
+  test('dos sesiones locales mantienen datos separados', () async {
+    final firstUser = AppStateController(demoConfig);
+    final secondUser = AppStateController(demoConfig);
+    await firstUser.signIn('uno@petcare.app', 'demopass');
+    await secondUser.signIn('dos@petcare.app', 'demopass');
+
+    await firstUser.savePet(PetModel.empty('demo-user').copyWith(name: 'Max'));
+    await secondUser.savePet(
+      PetModel.empty('demo-user').copyWith(name: 'Nala'),
+    );
+
+    expect(firstUser.state.pets.single.name, 'Max');
+    expect(secondUser.state.pets.single.name, 'Nala');
   });
 
   test('recordatorios pendientes se ordenan por fecha', () async {
@@ -168,6 +188,130 @@ void main() {
       isTrue,
     );
     expect(result.highestLevel, FoodSafetyLevel.toxic);
+  });
+
+  test('guarda contactos, documentos y pesos en modo local', () async {
+    final controller = AppStateController(demoConfig);
+    await controller.signIn('demo@petcare.app', 'demopass');
+    await controller.savePet(
+      PetModel.empty('demo-user').copyWith(name: 'Nala', allergies: 'pollo'),
+    );
+    final pet = controller.state.pets.first;
+    final now = DateTime.now();
+
+    await controller.saveVetContact(
+      const VetContactModel(
+        id: '',
+        userId: 'demo-user',
+        name: 'Dra. Ruiz',
+        clinic: 'Clinica Centro',
+        phone: '600000000',
+        notes: '',
+        isEmergency: true,
+      ),
+    );
+    await controller.addDocument(
+      PetDocumentModel(
+        id: '',
+        userId: 'demo-user',
+        petId: pet.id,
+        title: 'Cartilla',
+        documentType: 'vaccine_card',
+        fileUrl: '',
+        notes: '',
+        createdAt: now,
+      ),
+    );
+    await controller.addWeightLog(
+      WeightLogModel(
+        id: '',
+        userId: 'demo-user',
+        petId: pet.id,
+        weight: 4.8,
+        loggedAt: now,
+        notes: 'Control',
+      ),
+    );
+
+    expect(controller.state.vetContacts, hasLength(1));
+    expect(controller.state.documents, hasLength(1));
+    expect(controller.state.weightLogs.first.weight, 4.8);
+  });
+
+  test('actividad reciente agrupa acciones clave del cuidado', () {
+    final now = DateTime.now();
+    final pet = PetModel.empty('demo-user').copyWith(
+      id: 'pet-1',
+      name: 'Nala',
+      createdAt: now.subtract(const Duration(days: 4)),
+    );
+    final state = AppState.initial().copyWith(
+      pets: [pet],
+      events: [
+        _event(
+          pet.id,
+          'Rabia',
+          now.subtract(const Duration(days: 1)),
+        ).copyWith(status: CareEventStatus.completed, updatedAt: now),
+      ],
+      notes: [
+        HealthNoteModel(
+          id: 'note-1',
+          userId: 'demo-user',
+          petId: pet.id,
+          symptoms: 'Tos',
+          mood: 'Normal',
+          appetite: 'Bien',
+          energyLevel: 3,
+          notes: '',
+          noteDate: now,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+      weightLogs: [
+        WeightLogModel(
+          id: 'weight-1',
+          userId: 'demo-user',
+          petId: pet.id,
+          weight: 4.8,
+          loggedAt: now,
+          notes: '',
+        ),
+      ],
+      summaries: {
+        pet.id: AiSummaryModel(
+          summary: 'Resumen',
+          priorities: const [],
+          vetQuestions: const [],
+          generalRecommendations: const [],
+          safetyNotice: 'Aviso',
+          createdAt: now,
+        ),
+      },
+      productChecks: [
+        ProductCheckModel(
+          query: 'chocolate',
+          species: 'dog',
+          productName: 'chocolate',
+          ingredients: 'chocolate',
+          barcode: '',
+          imageUrl: '',
+          matchedRisks: const [],
+          source: 'test',
+          createdAt: now,
+        ),
+      ],
+    );
+
+    final titles = buildActivityFeed(state).map((item) => item.title);
+
+    expect(titles, contains('Mascota creada'));
+    expect(titles, contains('Vacuna completada'));
+    expect(titles, contains('Nota de salud añadida'));
+    expect(titles, contains('Peso registrado'));
+    expect(titles, contains('Informe generado'));
+    expect(titles, contains('Alimento consultado'));
   });
 }
 

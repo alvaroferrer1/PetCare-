@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../controllers/app_state_controller.dart';
 import '../../core/config/app_config.dart';
+import '../../core/navigation/safe_navigation.dart';
 import '../../models/pet_model.dart';
 import '../../services/cat_api_service.dart';
 import '../../services/dog_api_service.dart';
@@ -24,9 +23,11 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
   final _weight = TextEditingController();
   final _photoUrl = TextEditingController();
   final _notes = TextEditingController();
+  final _allergies = TextEditingController();
   PetSpecies _species = PetSpecies.dog;
   bool _loadingPhoto = false;
   bool _loadingBreeds = false;
+  String? _suggestedPhotoUrl;
   List<String> _breedOptions = const [];
 
   @override
@@ -39,6 +40,7 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
       _weight.text = existing.weight?.toString() ?? '';
       _photoUrl.text = existing.photoUrl ?? '';
       _notes.text = existing.notes;
+      _allergies.text = existing.allergies;
       _species = existing.species;
     }
   }
@@ -50,16 +52,18 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
     _weight.dispose();
     _photoUrl.dispose();
     _notes.dispose();
+    _allergies.dispose();
     super.dispose();
   }
 
   PetModel? _existingPet() {
     final id = widget.petId;
     if (id == null) return null;
-    return ref
+    final matches = ref
         .read(appStateControllerProvider)
         .pets
-        .firstWhere((pet) => pet.id == id);
+        .where((pet) => pet.id == id);
+    return matches.isEmpty ? null : matches.first;
   }
 
   @override
@@ -120,7 +124,10 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
                     )
                     .toList(),
                 onChanged: (value) {
-                  if (value != null) setState(() => _breed.text = value);
+                  if (value != null) {
+                    setState(() => _breed.text = value);
+                    _suggestPhoto(previewOnly: true);
+                  }
                 },
               ),
             if (_breedOptions.isNotEmpty) const SizedBox(height: 10),
@@ -152,7 +159,7 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
-              onPressed: _loadingPhoto ? null : _suggestPhoto,
+              onPressed: _loadingPhoto ? null : () => _suggestPhoto(),
               icon: _loadingPhoto
                   ? const SizedBox(
                       width: 18,
@@ -162,11 +169,39 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
                   : const Icon(Icons.image_search),
               label: const Text('Sugerir foto por raza'),
             ),
+            if (_suggestedPhotoUrl != null) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  _suggestedPhotoUrl!,
+                  height: 180,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonalIcon(
+                onPressed: () =>
+                    setState(() => _photoUrl.text = _suggestedPhotoUrl!),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('Usar esta foto'),
+              ),
+            ],
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
               maxLines: 4,
               decoration: const InputDecoration(labelText: 'Notas'),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _allergies,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Alergias o intolerancias',
+                hintText: 'Ej. pollo, lactosa, cereales',
+              ),
             ),
             const SizedBox(height: 22),
             FilledButton(
@@ -194,13 +229,15 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
               ? null
               : _photoUrl.text.trim(),
           notes: _notes.text.trim(),
+          allergies: _allergies.text.trim(),
           updatedAt: now,
         );
     await ref.read(appStateControllerProvider.notifier).savePet(pet);
-    if (mounted) context.go('/home');
+    if (!mounted) return;
+    context.popOrRoot();
   }
 
-  Future<void> _suggestPhoto() async {
+  Future<void> _suggestPhoto({bool previewOnly = false}) async {
     setState(() => _loadingPhoto = true);
     final config = ref.read(appConfigProvider);
     final breed = _breed.text.trim();
@@ -210,7 +247,10 @@ class _PetFormViewState extends ConsumerState<PetFormView> {
     if (!mounted) return;
     setState(() {
       _loadingPhoto = false;
-      if (url != null) _photoUrl.text = url;
+      if (url != null) {
+        _suggestedPhotoUrl = url;
+        if (!previewOnly) _photoUrl.text = url;
+      }
     });
     if (url == null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

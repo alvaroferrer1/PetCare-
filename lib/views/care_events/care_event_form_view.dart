@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../controllers/app_state_controller.dart';
+import '../../core/navigation/safe_navigation.dart';
 import '../../models/care_event_model.dart';
 
 class CareEventFormView extends ConsumerStatefulWidget {
@@ -100,6 +99,7 @@ class _CareEventFormViewState extends ConsumerState<CareEventFormView> {
             updatedAt: now,
           ),
         );
-    if (mounted) context.go('/pets/${widget.petId}');
+    if (!mounted) return;
+    context.popOrRoot();
   }
 }

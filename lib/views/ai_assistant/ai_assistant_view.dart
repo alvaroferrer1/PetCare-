@@ -71,10 +71,22 @@ class _AiAssistantViewState extends ConsumerState<AiAssistantView> {
 
   Future<void> _generate() async {
     final state = ref.read(appStateControllerProvider);
+    if (state.pets.isEmpty) return;
     final petId = _selectedPetId ?? state.pets.first.id;
     setState(() => _loading = true);
-    await ref.read(appStateControllerProvider.notifier).generateSummary(petId);
-    if (mounted) setState(() => _loading = false);
+    try {
+      await ref.read(appStateControllerProvider.notifier).generateSummary(petId);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo generar el resumen ahora mismo.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 }
 
