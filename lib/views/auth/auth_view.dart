@@ -161,6 +161,18 @@ class _AuthViewState extends ConsumerState<AuthView> {
                       )
                     : Text(_register ? 'Registrarme' : 'Entrar'),
               ),
+              if (!_register) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: state.loading
+                      ? null
+                      : () => ref
+                            .read(appStateControllerProvider.notifier)
+                            .startDemoSession(),
+                  icon: const Icon(Icons.play_circle_outline),
+                  label: const Text('Entrar en demo para video'),
+                ),
+              ],
               TextButton(
                 onPressed: () => setState(() => _register = !_register),
                 child: Text(

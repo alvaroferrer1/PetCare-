@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:petcare_ai_companion/app.dart';
 import 'package:petcare_ai_companion/core/config/app_config.dart';
 import 'package:petcare_ai_companion/models/care_event_model.dart';
@@ -13,8 +14,9 @@ import 'package:petcare_ai_companion/views/reminders/reminders_view.dart';
 import 'package:petcare_ai_companion/views/resources/resources_view.dart';
 
 void main() {
-  setUp(() {
+  setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting('es');
   });
 
   testWidgets('flujo visual onboarding login y food safety', (tester) async {
@@ -34,7 +36,12 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Continuar'));
+    expect(find.text('Historial y control'), findsNothing);
+    await tester.tap(find.text('Siguiente'));
+    await tester.pumpAndSettle();
+    expect(find.text('Historial y control'), findsOneWidget);
+
+    await tester.tap(find.text('Saltar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Bienvenido de nuevo'), findsOneWidget);
@@ -54,6 +61,48 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Seguro'), findsWidgets);
+  });
+
+  testWidgets('modo demo carga mascotas y recordatorios para la grabacion', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(
+            const AppConfig(
+              supabaseUrl: 'https://demo.supabase.co',
+              supabaseAnonKey: 'demo-key',
+              openAiApiKey: '',
+              catApiKey: '',
+            ),
+          ),
+        ],
+        child: const PetCareApp(),
+      ),
+    );
+
+    await tester.tap(find.text('Saltar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Entrar en demo para video'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('PetCare'), findsOneWidget);
+    expect(find.text('2'), findsWidgets);
+
+    await tester.scrollUntilVisible(
+      find.text('Luna'),
+      420,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Luna'), findsWidgets);
+
+    await tester.scrollUntilVisible(
+      find.text('Recordatorio vacuna rabia'),
+      420,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Recordatorio vacuna rabia'), findsOneWidget);
   });
 
   testWidgets('pantallas de recordatorios y guia segura renderizan', (
@@ -117,7 +166,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Continuar'));
+    await tester.tap(find.text('Saltar'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('No tengo cuenta, registrarme'));
     await tester.pumpAndSettle();
@@ -146,7 +195,6 @@ void main() {
     );
     expect(find.text('Las contrasenas no coinciden.'), findsOneWidget);
   });
-
 }
 
 Future<void> _pumpScreen(WidgetTester tester, Widget child) async {

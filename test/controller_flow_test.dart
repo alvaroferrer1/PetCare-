@@ -31,6 +31,25 @@ void main() {
     },
   );
 
+  test('modo demo prepara datos completos para ensenar la app', () {
+    final controller = AppStateController(demoConfig);
+
+    controller.startDemoSession();
+
+    expect(controller.state.pets.map((pet) => pet.name), contains('Luna'));
+    expect(controller.state.pets.map((pet) => pet.name), contains('Michi'));
+    expect(
+      controller.state.events.map((event) => event.title),
+      contains('Recordatorio vacuna rabia'),
+    );
+    expect(controller.state.pendingEvents, isNotEmpty);
+    expect(controller.state.vetContacts.single.isEmergency, isTrue);
+    expect(controller.state.documents.single.title, 'Cartilla de vacunacion');
+    expect(controller.state.weightLogs, hasLength(2));
+    expect(controller.state.productChecks.single.hasRisks, isTrue);
+    expect(controller.state.summaries['local-pet-luna'], isNotNull);
+  });
+
   test('crear mascota en modo local la anade al estado', () async {
     final controller = AppStateController(demoConfig);
     await controller.signIn('demo@petcare.app', 'demopass');

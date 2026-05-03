@@ -218,6 +218,10 @@ class AppStateController extends StateNotifier<AppState> {
     state = AppState.initial().copyWith(onboardingDone: true);
   }
 
+  void startDemoSession() {
+    state = _buildDemoState();
+  }
+
   Future<void> refreshRemoteData() async {
     final client = _client;
     final profile = state.profile;
@@ -633,6 +637,221 @@ class AppStateController extends StateNotifier<AppState> {
 
   String _localId(String prefix) =>
       'local-$prefix-${DateTime.now().microsecondsSinceEpoch}';
+
+  AppState _buildDemoState() {
+    final now = DateTime.now();
+    final profile = ProfileModel.demo().copyWith(
+      phone: '600 123 456',
+      emergencyVetName: 'Clinica Vet Centro',
+      emergencyVetPhone: '976 000 111',
+    );
+    final luna = PetModel(
+      id: 'local-pet-luna',
+      userId: profile.id,
+      name: 'Luna',
+      species: PetSpecies.dog,
+      breed: 'Border Collie',
+      birthDate: DateTime(now.year - 4, 3, 12),
+      weight: 18.4,
+      photoUrl: null,
+      notes:
+          'Muy activa. Conviene controlar ejercicio, vacunas y posibles alergias.',
+      allergies: 'Polen en primavera',
+      createdAt: now.subtract(const Duration(days: 90)),
+      updatedAt: now.subtract(const Duration(days: 1)),
+    );
+    final michi = PetModel(
+      id: 'local-pet-michi',
+      userId: profile.id,
+      name: 'Michi',
+      species: PetSpecies.cat,
+      breed: 'Europeo comun',
+      birthDate: DateTime(now.year - 2, 8, 4),
+      weight: 4.7,
+      photoUrl: null,
+      notes: 'Gato tranquilo, sensible a cambios de comida.',
+      allergies: '',
+      createdAt: now.subtract(const Duration(days: 60)),
+      updatedAt: now.subtract(const Duration(days: 2)),
+    );
+    final events = [
+      CareEventModel(
+        id: 'local-event-vaccine-done',
+        userId: profile.id,
+        petId: luna.id,
+        type: CareEventType.vaccine,
+        title: 'Vacuna polivalente anual',
+        description: 'Aplicada en revision anual. Proxima dosis en un ano.',
+        eventDate: now.subtract(const Duration(days: 28)),
+        status: CareEventStatus.completed,
+        createdAt: now.subtract(const Duration(days: 35)),
+        updatedAt: now.subtract(const Duration(days: 28)),
+      ),
+      CareEventModel(
+        id: 'local-event-vaccine-next',
+        userId: profile.id,
+        petId: luna.id,
+        type: CareEventType.vaccine,
+        title: 'Recordatorio vacuna rabia',
+        description: 'Pendiente de confirmar con la clinica.',
+        eventDate: now.add(const Duration(days: 12)),
+        status: CareEventStatus.pending,
+        createdAt: now.subtract(const Duration(days: 10)),
+        updatedAt: now.subtract(const Duration(days: 10)),
+      ),
+      CareEventModel(
+        id: 'local-event-vet',
+        userId: profile.id,
+        petId: luna.id,
+        type: CareEventType.vetVisit,
+        title: 'Revision por alergia',
+        description: 'Preguntar por picor en primavera y pauta preventiva.',
+        eventDate: now.add(const Duration(days: 5)),
+        status: CareEventStatus.pending,
+        createdAt: now.subtract(const Duration(days: 4)),
+        updatedAt: now.subtract(const Duration(days: 4)),
+      ),
+      CareEventModel(
+        id: 'local-event-grooming',
+        userId: profile.id,
+        petId: michi.id,
+        type: CareEventType.grooming,
+        title: 'Cepillado y revision de unas',
+        description: 'Rutina de higiene mensual.',
+        eventDate: now.subtract(const Duration(days: 6)),
+        status: CareEventStatus.completed,
+        createdAt: now.subtract(const Duration(days: 8)),
+        updatedAt: now.subtract(const Duration(days: 6)),
+      ),
+      CareEventModel(
+        id: 'local-event-food',
+        userId: profile.id,
+        petId: michi.id,
+        type: CareEventType.food,
+        title: 'Cambio gradual de pienso',
+        description: 'Introducir comida nueva durante 7 dias.',
+        eventDate: now.add(const Duration(days: 3)),
+        status: CareEventStatus.pending,
+        createdAt: now.subtract(const Duration(days: 2)),
+        updatedAt: now.subtract(const Duration(days: 2)),
+      ),
+    ];
+    final notes = [
+      HealthNoteModel(
+        id: 'local-note-luna',
+        userId: profile.id,
+        petId: luna.id,
+        symptoms: 'Picor leve en patas',
+        mood: 'Activa',
+        appetite: 'Normal',
+        energyLevel: 4,
+        notes: 'Sin heridas. Revisar si aumenta tras paseos por hierba.',
+        noteDate: now.subtract(const Duration(days: 2)),
+        createdAt: now.subtract(const Duration(days: 2)),
+        updatedAt: now.subtract(const Duration(days: 2)),
+      ),
+      HealthNoteModel(
+        id: 'local-note-michi',
+        userId: profile.id,
+        petId: michi.id,
+        symptoms: 'Apetito irregular',
+        mood: 'Tranquilo',
+        appetite: 'Medio',
+        energyLevel: 3,
+        notes: 'Coincide con el cambio de pienso.',
+        noteDate: now.subtract(const Duration(days: 4)),
+        createdAt: now.subtract(const Duration(days: 4)),
+        updatedAt: now.subtract(const Duration(days: 4)),
+      ),
+    ];
+    final chocolate = FoodSafetySeed.items.firstWhere(
+      (item) => item.species == 'dog' && item.foodName == 'chocolate',
+    );
+    final summary = AiSummaryModel(
+      summary:
+          'Luna tiene buen seguimiento general, con una vacuna completada y dos recordatorios pendientes cercanos.',
+      priorities: const [
+        'Confirmar la cita de revision por alergia.',
+        'Mantener el recordatorio de rabia visible hasta completarlo.',
+        'Registrar si el picor aumenta despues de los paseos.',
+      ],
+      vetQuestions: const [
+        'El picor de patas puede estar relacionado con alergia ambiental?',
+        'Conviene ajustar el calendario de vacunas de Luna?',
+        'Hay senales que deberia vigilar antes de la visita?',
+      ],
+      generalRecommendations: const [
+        'Anotar sintomas con fecha para detectar patrones.',
+        'No administrar medicacion sin indicacion veterinaria.',
+      ],
+      safetyNotice:
+          'Este resumen es orientativo y no sustituye una valoracion veterinaria.',
+      createdAt: now.subtract(const Duration(hours: 3)),
+    );
+
+    return AppState.initial().copyWith(
+      onboardingDone: true,
+      profile: profile,
+      pets: [luna, michi],
+      events: events,
+      notes: notes,
+      vetContacts: [
+        VetContactModel(
+          id: 'local-vet-main',
+          userId: profile.id,
+          name: 'Dra. Laura Martin',
+          clinic: 'Clinica Vet Centro',
+          phone: '976 000 111',
+          notes: 'Contacto principal para vacunas y urgencias.',
+          isEmergency: true,
+        ),
+      ],
+      documents: [
+        PetDocumentModel(
+          id: 'local-doc-luna',
+          userId: profile.id,
+          petId: luna.id,
+          title: 'Cartilla de vacunacion',
+          documentType: 'vaccine_card',
+          fileUrl: '',
+          notes: 'Documento pendiente de subir en version real.',
+          createdAt: now.subtract(const Duration(days: 20)),
+        ),
+      ],
+      weightLogs: [
+        WeightLogModel(
+          id: 'local-weight-1',
+          userId: profile.id,
+          petId: luna.id,
+          weight: 18.0,
+          loggedAt: now.subtract(const Duration(days: 45)),
+          notes: 'Peso inicial',
+        ),
+        WeightLogModel(
+          id: 'local-weight-2',
+          userId: profile.id,
+          petId: luna.id,
+          weight: 18.4,
+          loggedAt: now.subtract(const Duration(days: 8)),
+          notes: 'Ligera subida tras cambio de rutina',
+        ),
+      ],
+      productChecks: [
+        ProductCheckModel(
+          query: 'dog food chocolate',
+          species: 'dog',
+          productName: 'Snack demo con ingrediente de riesgo',
+          ingredients: 'Cereales, pollo, chocolate, aceites vegetales',
+          barcode: '000-demo',
+          imageUrl: '',
+          matchedRisks: [chocolate],
+          source: 'Demo local basada en la tabla de seguridad alimentaria',
+          createdAt: now.subtract(const Duration(hours: 5)),
+        ),
+      ],
+      summaries: {luna.id: summary},
+    );
+  }
 }
 
 List<ActivityItemModel> buildActivityFeed(AppState state) {
