@@ -1,0 +1,66 @@
+{
+  "project_name": "petcare-ai-companion",
+  "collections": [
+    {
+      "name": "users",
+      "document_id": "userId (from Firebase Auth)",
+      "fields": [
+        { "name": "email", "type": "string", "description": "User email address" },
+        { "name": "displayName", "type": "string", "description": "User full name" },
+        { "name": "createdAt", "type": "timestamp", "description": "Account creation time" }
+      ]
+    },
+    {
+      "name": "pets",
+      "document_id": "auto-generated",
+      "fields": [
+        { "name": "userId", "type": "string", "description": "Owner ID" },
+        { "name": "name", "type": "string" },
+        { "name": "species", "type": "string", "description": "'dog' or 'cat'" },
+        { "name": "breed", "type": "string" },
+        { "name": "birthDate", "type": "string" },
+        { "name": "weight", "type": "number" },
+        { "name": "allergies", "type": "array of strings" },
+        { "name": "medicalConditions", "type": "array of strings" },
+        { "name": "createdAt", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "care_events",
+      "document_id": "auto-generated",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "petId", "type": "string" },
+        { "name": "type", "type": "string", "description": "'vaccine', 'deworming', 'hygiene', 'medication', 'other'" },
+        { "name": "title", "type": "string" },
+        { "name": "eventDate", "type": "string", "description": "ISO Date" },
+        { "name": "description", "type": "string" },
+        { "name": "status", "type": "string", "description": "'pending' or 'completed'" }
+      ]
+    },
+    {
+      "name": "health_notes",
+      "document_id": "auto-generated",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "petId", "type": "string" },
+        { "name": "noteDate", "type": "string" },
+        { "name": "symptoms", "type": "string" },
+        { "name": "mood", "type": "string", "description": "'Feliz', 'Tranquilo', 'Apático', 'Irritable'" },
+        { "name": "appetite", "type": "string", "description": "'Normal', 'Aumentado', 'Disminuido', 'Anorexia'" },
+        { "name": "energyLevel", "type": "number", "description": "1 to 5" }
+      ]
+    },
+    {
+      "name": "weight_logs",
+      "document_id": "auto-generated",
+      "fields": [
+        { "name": "userId", "type": "string" },
+        { "name": "petId", "type": "string" },
+        { "name": "weight", "type": "number" },
+        { "name": "loggedAt", "type": "string", "description": "ISO Date" },
+        { "name": "notes", "type": "string" }
+      ]
+    }
+  ]
+}

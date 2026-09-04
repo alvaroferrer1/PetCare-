@@ -1,0 +1,11 @@
+{
+  "name": "PetCare AI Companion",
+  "description": "Tu compañero inteligente para el cuidado y salud de tus mascotas con resúmenes asistidos por IA, control de vacunas, alimentación y análisis de productos.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
